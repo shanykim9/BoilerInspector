@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보일러 점검 관리 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            display: none;
+        }
+        .toast.success {
+            background-color: #10b981;
+        }
+        .toast.error {
+            background-color: #ef4444;
+        }
+        .toast.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .checklist-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .checklist-item.expanded {
+            border-color: #3b82f6;
+        }
+        .photo-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+        .product-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Main Navigation -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">보일러 점검 관리</h1>
+            <div class="space-x-4">
+                <button onclick="showSection('home')" class="hover:bg-blue-700 px-3 py-2 rounded">홈</button>
+                <button onclick="showSection('new-inspection')" class="hover:bg-blue-700 px-3 py-2 rounded">새 점검</button>
+                <button onclick="showSection('inspectors')" class="hover:bg-blue-700 px-3 py-2 rounded">점검자 관리</button>
+                <button onclick="showSection('sites')" class="hover:bg-blue-700 px-3 py-2 rounded">현장 관리</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <div id="home-section" class="container mx-auto p-4">
+        <h2 class="text-2xl font-bold mb-6">최근 점검 목록</h2>
+        <div id="inspections-list" class="space-y-4">
+            <!-- Inspections will be loaded here -->
+        </div>
+    </div>
+
+    <!-- New Inspection Section -->
+    <div id="new-inspection-section" class="container mx-auto p-4" style="display: none;">
+        <h2 class="text-2xl font-bold mb-6">새 점검 작성</h2>
+        <form id="inspection-form" class="space-y-6">
+            
+            <!-- Basic Info -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">기본 정보</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">문서번호</label>
+                        <input type="text" id="documentNumber" class="w-full p-2 border rounded-md" placeholder="자동 생성됩니다">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">점검일</label>
+                        <input type="date" id="inspectionDate" class="w-full p-2 border rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">점검자</label>
+                        <select id="inspectorId" class="w-full p-2 border rounded-md" required>
+                            <option value="">점검자를 선택하세요</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">현장</label>
+                        <select id="siteId" class="w-full p-2 border rounded-md" required>
+                            <option value="">현장을 선택하세요</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Installation Info -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">설치 정보</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">설치장소</label>
+                        <input type="text" id="installationLocation" class="w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">설치일</label>
+                        <input type="date" id="installationDate" class="w-full p-2 border rounded-md">
+                    </div>
+                </div>
+                <div id="yearsInUse" class="text-sm text-gray-600 mt-2"></div>
+            </div>
+
+            <!-- Products -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">설치 제품</h3>
+                <div id="products-container"></div>
+                <button type="button" onclick="addProduct()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    <i class="fas fa-plus mr-2"></i>제품 추가
+                </button>
+                <div id="products-summary" class="text-sm text-gray-600 mt-2"></div>
+            </div>
+
+            <!-- Technical Details -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">기술적 세부사항</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">사용연료</label>
+                        <select id="fuelType" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="도시가스">도시가스</option>
+                            <option value="LPG">LPG</option>
+                            <option value="전기">전기</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">제조년도</label>
+                        <select id="manufactureYear" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">정격전압</label>
+                        <select id="ratedVoltage" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="220V">220V</option>
+                            <option value="380V">380V</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">배관</label>
+                        <select id="pipingType" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="동관">동관</option>
+                            <option value="스테인리스">스테인리스</option>
+                            <option value="PVC">PVC</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">수질</label>
+                        <select id="waterQuality" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="양호">양호</option>
+                            <option value="보통">보통</option>
+                            <option value="불량">불량</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">제어방식</label>
+                        <select id="controlMethod" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="자동">자동</option>
+                            <option value="수동">수동</option>
+                            <option value="혼합">혼합</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">설치용도</label>
+                        <select id="installationPurpose" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="난방">난방</option>
+                            <option value="급탕">급탕</option>
+                            <option value="난방+급탕">난방+급탕</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">남품형태</label>
+                        <select id="productForm" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="벽걸이형">벽걸이형</option>
+                            <option value="바닥설치형">바닥설치형</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checklist -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">점검 체크리스트</h3>
+                <div class="mb-4">
+                    <button type="button" onclick="setAllYes()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        전체 Yes
+                    </button>
+                </div>
+                <div id="checklist-container"></div>
+            </div>
+
+            <!-- Photos -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">사진 첨부</h3>
+                <div class="mb-4">
+                    <input type="file" id="photo-upload" accept="image/*" multiple class="hidden">
+                    <button type="button" onclick="document.getElementById('photo-upload').click()" 
+                            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-camera mr-2"></i>사진 추가
+                    </button>
+                </div>
+                <div id="photos-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+            </div>
+
+            <!-- Results -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">점검 결과</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">점검 결과</label>
+                        <select id="result" class="w-full p-2 border rounded-md">
+                            <option value="">선택하세요</option>
+                            <option value="양호">양호</option>
+                            <option value="보통">보통</option>
+                            <option value="불량">불량</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">종합 의견</label>
+                        <textarea id="summary" rows="4" class="w-full p-2 border rounded-md" placeholder="점검 결과에 대한 종합 의견을 입력하세요"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">현장 상태</label>
+                        <textarea id="siteCondition" rows="3" class="w-full p-2 border rounded-md" placeholder="현장의 전반적인 상태를 입력하세요"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex space-x-4">
+                    <button type="button" onclick="saveInspection()" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+                        <i class="fas fa-save mr-2"></i>저장
+                    </button>
+                    <button type="button" onclick="generatePDF()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-file-pdf mr-2"></i>PDF 생성
+                    </button>
+                    <button type="button" onclick="showSection('home')" class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">
+                        취소
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Inspectors Section -->
+    <div id="inspectors-section" class="container mx-auto p-4" style="display: none;">
+        <h2 class="text-2xl font-bold mb-6">점검자 관리</h2>
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">새 점검자 추가</h3>
+            <form id="inspector-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">이름</label>
+                    <input type="text" id="inspector-name" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">전화번호</label>
+                    <input type="tel" id="inspector-phone" class="w-full p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">이메일</label>
+                    <input type="email" id="inspector-email" class="w-full p-2 border rounded-md">
+                </div>
+                <div class="md:col-span-3">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-plus mr-2"></i>추가
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div id="inspectors-list" class="space-y-4">
+            <!-- Inspectors will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Sites Section -->
+    <div id="sites-section" class="container mx-auto p-4" style="display: none;">
+        <h2 class="text-2xl font-bold mb-6">현장 관리</h2>
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">새 현장 추가</h3>
+            <form id="site-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">현장명</label>
+                        <input type="text" id="site-name" class="w-full p-2 border rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">주소</label>
+                        <input type="text" id="site-address" class="w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">담당자</label>
+                        <input type="text" id="site-contact-person" class="w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">연락처</label>
+                        <input type="tel" id="site-contact-phone" class="w-full p-2 border rounded-md">
+                    </div>
+                </div>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    <i class="fas fa-plus mr-2"></i>추가
+                </button>
+            </form>
+        </div>
+        <div id="sites-list" class="space-y-4">
+            <!-- Sites will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading" class="loading fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p class="mt-4 text-center">처리 중...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

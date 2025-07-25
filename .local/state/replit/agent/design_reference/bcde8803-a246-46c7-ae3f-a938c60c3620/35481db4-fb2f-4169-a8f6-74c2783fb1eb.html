@@ -1,0 +1,518 @@
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보일러 점검 관리 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    'sans': ['Noto Sans KR', 'sans-serif'],
+                },
+                colors: {
+                    primary: '#1976D2',
+                    secondary: '#FFC107',
+                    success: '#4CAF50',
+                    error: '#F44336',
+                    warning: '#FF9800',
+                }
+            }
+        }
+    };
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- @COMPONENT: AppHeader -->
+    <header class="bg-primary text-white shadow-lg sticky top-0 z-50">
+        <div class="flex items-center justify-between p-4">
+            <div class="flex items-center space-x-3">
+                <button class="material-icons text-2xl" data-event="click:toggleDrawer">menu</button>
+                <h1 class="text-lg font-semibold">보일러 점검 관리</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="material-icons text-2xl" data-event="click:showNotifications">notifications</button>
+                <button class="material-icons text-2xl" data-event="click:showProfile">account_circle</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- @COMPONENT: NavigationDrawer -->
+    <div id="drawer" class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300">
+        <div class="p-4 border-b">
+            <h2 class="text-lg font-semibold text-gray-800">메뉴</h2>
+        </div>
+        <nav class="p-4">
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-lg bg-blue-50 text-primary">
+                <span class="material-icons">assignment</span>
+                <span>새 점검</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 mt-2">
+                <span class="material-icons">history</span>
+                <span>점검 이력</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 mt-2">
+                <span class="material-icons">business</span>
+                <span>현장 관리</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 mt-2">
+                <span class="material-icons">people</span>
+                <span>점검자 관리</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 mt-2">
+                <span class="material-icons">email</span>
+                <span>발송 기록</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- @COMPONENT: ProgressIndicator -->
+    <div class="bg-white border-b px-4 py-3">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-600">진행률</span>
+            <span class="text-sm font-medium text-primary" data-bind="progress.percentage">65%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 65%" data-bind="progress.width"></div>
+        </div>
+        <div class="flex justify-between mt-2 text-xs text-gray-500">
+            <span>2/3 섹션 완료</span>
+            <span data-mock="true">자동 저장됨 14:32</span>
+        </div>
+    </div>
+
+    <!-- @COMPONENT: MainContent -->
+    <main class="pb-20">
+        <!-- @COMPONENT: InspectionInfoSection -->
+        <section class="bg-white m-4 rounded-lg shadow-sm border">
+            <div class="p-4 border-b bg-blue-50">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <span class="material-icons text-primary mr-2">search</span>
+                    점검 정보
+                </h2>
+            </div>
+            
+            <div class="p-4 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">문서번호</label>
+                        <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                               placeholder="문서번호 입력" data-bind="inspection.documentNumber">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">방문차수</label>
+                        <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" data-bind="inspection.visitCount">
+                            <option>선택하세요</option>
+                            <option>1차</option>
+                            <option>2차</option>
+                            <option>3차</option>
+                            <option>기타</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">점검일</label>
+                        <div class="relative">
+                            <input type="date" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                   data-bind="inspection.date">
+                            <span class="material-icons absolute right-3 top-3 text-gray-400 pointer-events-none">calendar_today</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">점검자</label>
+                        <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" data-bind="inspection.inspector">
+                            <option>점검자 선택</option>
+                            <option data-mock="true">김기술 (T001)</option>
+                            <option data-mock="true">이전문 (T002)</option>
+                            <option data-mock="true">박숙련 (T003)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">점검결과</label>
+                        <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" data-bind="inspection.result">
+                            <option>결과 선택</option>
+                            <option class="text-green-600">정상</option>
+                            <option class="text-yellow-600">주의</option>
+                            <option class="text-red-600">불량</option>
+                            <option class="text-orange-600">점검 필요</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">시설관리자</label>
+                        <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                               placeholder="관리자명 입력" data-bind="inspection.facilityManager">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">점검결과요약</label>
+                    <textarea rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none" 
+                              placeholder="점검 결과 요약을 입력하세요..." data-bind="inspection.summary"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- @COMPONENT: InstallationInfoSection -->
+        <section class="bg-white m-4 rounded-lg shadow-sm border">
+            <div class="p-4 border-b bg-green-50">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <span class="material-icons text-green-600 mr-2">build</span>
+                    설치 정보
+                </h2>
+            </div>
+            
+            <div class="p-4 space-y-4">
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">계약처명</label>
+                        <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                               placeholder="계약처명 입력" data-bind="installation.contractorName">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">업종</label>
+                        <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" data-bind="installation.businessType">
+                            <option>업종 선택</option>
+                            <option>아파트</option>
+                            <option>오피스텔</option>
+                            <option>상업시설</option>
+                            <option>공장</option>
+                            <option>학교</option>
+                            <option>병원</option>
+                            <option>기타</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">설치주소</label>
+                        <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                               placeholder="설치 주소를 입력하세요" data-bind="installation.address">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">설치대수</label>
+                            <input type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                   placeholder="대수" data-bind="installation.unitCount">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">설치제품</label>
+                            <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" data-bind="installation.product">
+                                <option>제품 선택</option>
+                                <option>가스보일러</option>
+                                <option>전기보일러</option>
+                                <option>온수기</option>
+                                <option>열펌프</option>
+                                <option>기타</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical Details Accordion -->
+                <div class="border rounded-lg">
+                    <button class="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50" 
+                            data-event="click:toggleTechnicalDetails">
+                        <span class="font-medium text-gray-800">기술적 세부사항</span>
+                        <span class="material-icons transform transition-transform" id="accordionIcon">expand_more</span>
+                    </button>
+                    
+                    <div id="technicalDetails" class="border-t p-4 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">연료/계량기/압력</label>
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                       placeholder="연료 정보" data-bind="installation.fuel">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">연도/전기</label>
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                       placeholder="연도/전기 정보" data-bind="installation.electrical">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">배관/수질/압력</label>
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                       placeholder="배관 정보" data-bind="installation.piping">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">제어(동글포함)</label>
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                       placeholder="제어 시스템" data-bind="installation.control">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">연동 System</label>
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                       placeholder="연동 시스템" data-bind="installation.integrationSystem">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">설치용도</label>
+                                <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" data-bind="installation.purpose">
+                                    <option>용도 선택</option>
+                                    <option>난방</option>
+                                    <option>급탕</option>
+                                    <option>난방+급탕</option>
+                                    <option>기타</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">설치장소</label>
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                       placeholder="설치 장소" data-bind="installation.location">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">설치일/사용년수</label>
+                                <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                       placeholder="설치일 및 사용년수" data-bind="installation.installationDate">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">시스템</label>
+                            <input type="text" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                   placeholder="시스템 정보" data-bind="installation.system">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">현장상태</label>
+                            <textarea rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none" 
+                                      placeholder="현장 상태를 상세히 기록하세요..." data-bind="installation.siteCondition"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- @COMPONENT: PhotoUploadSection -->
+        <section class="bg-white m-4 rounded-lg shadow-sm border">
+            <div class="p-4 border-b bg-purple-50">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <span class="material-icons text-purple-600 mr-2">photo_camera</span>
+                    현장 사진
+                </h2>
+            </div>
+            
+            <div class="p-4">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <!-- Photo Upload Areas -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors" data-implementation="File upload component">
+                        <span class="material-icons text-4xl text-gray-400 mb-2">add_a_photo</span>
+                        <p class="text-sm text-gray-600">설치 전면</p>
+                    </div>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors" data-implementation="File upload component">
+                        <span class="material-icons text-4xl text-gray-400 mb-2">add_a_photo</span>
+                        <p class="text-sm text-gray-600">제어판</p>
+                    </div>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors" data-implementation="File upload component">
+                        <span class="material-icons text-4xl text-gray-400 mb-2">add_a_photo</span>
+                        <p class="text-sm text-gray-600">배관 상태</p>
+                    </div>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors" data-implementation="File upload component">
+                        <span class="material-icons text-4xl text-gray-400 mb-2">add_a_photo</span>
+                        <p class="text-sm text-gray-600">기타</p>
+                    </div>
+                </div>
+                
+                <button class="w-full p-3 border border-primary text-primary rounded-lg hover:bg-blue-50 flex items-center justify-center space-x-2">
+                    <span class="material-icons">add_circle_outline</span>
+                    <span>사진 추가</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- @COMPONENT: FloatingActionButtons -->
+    <div class="fixed bottom-4 right-4 flex flex-col space-y-3">
+        <!-- Save Draft Button -->
+        <button class="bg-gray-600 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors" 
+                data-event="click:saveDraft" title="임시저장">
+            <span class="material-icons">save</span>
+        </button>
+        
+        <!-- Preview Button -->
+        <button class="bg-secondary text-white p-3 rounded-full shadow-lg hover:bg-yellow-600 transition-colors" 
+                data-event="click:previewReport" title="미리보기">
+            <span class="material-icons">preview</span>
+        </button>
+        
+        <!-- Complete Button -->
+        <button class="bg-success text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-colors" 
+                data-event="click:completeInspection" title="점검완료">
+            <span class="material-icons text-2xl">check_circle</span>
+        </button>
+    </div>
+
+    <!-- @COMPONENT: ActionSheet Modal -->
+    <div id="actionSheet" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl p-4">
+            <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+            <h3 class="text-lg font-semibold mb-4">점검 완료</h3>
+            
+            <div class="space-y-3">
+                <button class="w-full p-4 text-left border rounded-lg hover:bg-gray-50 flex items-center space-x-3" 
+                        data-event="click:generatePDF">
+                    <span class="material-icons text-red-600">picture_as_pdf</span>
+                    <span>PDF 생성 후 저장</span>
+                </button>
+                
+                <button class="w-full p-4 text-left border rounded-lg hover:bg-gray-50 flex items-center space-x-3" 
+                        data-event="click:sendEmail">
+                    <span class="material-icons text-blue-600">email</span>
+                    <span>이메일 발송</span>
+                </button>
+                
+                <button class="w-full p-4 text-left border rounded-lg hover:bg-gray-50 flex items-center space-x-3" 
+                        data-event="click:saveOnly">
+                    <span class="material-icons text-green-600">save_alt</span>
+                    <span>저장만 하기</span>
+                </button>
+            </div>
+            
+            <button class="w-full mt-4 p-3 bg-gray-200 rounded-lg" data-event="click:closeActionSheet">
+                취소
+            </button>
+        </div>
+    </div>
+
+    <!-- @COMPONENT: Toast Notifications -->
+    <div id="toast" class="fixed top-20 left-4 right-4 bg-success text-white p-4 rounded-lg shadow-lg transform translate-y-[-100px] opacity-0 transition-all duration-300 z-50">
+        <div class="flex items-center space-x-3">
+            <span class="material-icons">check_circle</span>
+            <span data-bind="toast.message">자동 저장되었습니다.</span>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // Navigation drawer toggle
+        let drawerOpen = false;
+        const drawer = document.getElementById('drawer');
+        
+        function toggleDrawer() {
+            drawerOpen = !drawerOpen;
+            if (drawerOpen) {
+                drawer.classList.remove('-translate-x-full');
+            } else {
+                drawer.classList.add('-translate-x-full');
+            }
+        }
+
+        // Technical details accordion
+        function toggleTechnicalDetails() {
+            const details = document.getElementById('technicalDetails');
+            const icon = document.getElementById('accordionIcon');
+            
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                icon.classList.add('rotate-180');
+            } else {
+                details.style.display = 'none';
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+        // Action sheet modal
+        function showActionSheet() {
+            document.getElementById('actionSheet').classList.remove('hidden');
+        }
+
+        function closeActionSheet() {
+            document.getElementById('actionSheet').classList.add('hidden');
+        }
+
+        // Toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('[data-bind="toast.message"]').textContent = message;
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-100px]', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        // Auto-save functionality
+        function autoSave() {
+            showToast('자동 저장되었습니다.');
+            // Update progress indicator
+            // In real implementation, this would save form data
+        }
+
+        // Event listeners
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-event]');
+            if (!target) return;
+
+            const event = target.getAttribute('data-event');
+            
+            switch(event) {
+                case 'click:toggleDrawer':
+                    toggleDrawer();
+                    break;
+                case 'click:toggleTechnicalDetails':
+                    toggleTechnicalDetails();
+                    break;
+                case 'click:completeInspection':
+                    showActionSheet();
+                    break;
+                case 'click:closeActionSheet':
+                    closeActionSheet();
+                    break;
+                case 'click:saveDraft':
+                    autoSave();
+                    break;
+                case 'click:generatePDF':
+                    showToast('PDF 생성 중...');
+                    closeActionSheet();
+                    break;
+                case 'click:sendEmail':
+                    showToast('이메일 발송 화면으로 이동...');
+                    closeActionSheet();
+                    break;
+                case 'click:saveOnly':
+                    showToast('점검 기록이 저장되었습니다.');
+                    closeActionSheet();
+                    break;
+            }
+        });
+
+        // Close drawer when clicking outside
+        document.addEventListener('click', function(e) {
+            if (drawerOpen && !drawer.contains(e.target) && !e.target.closest('[data-event="click:toggleDrawer"]')) {
+                toggleDrawer();
+            }
+        });
+
+        // Simulate auto-save every 30 seconds
+        setInterval(autoSave, 30000);
+
+        // Form change detection for progress
+        document.addEventListener('input', function(e) {
+            if (e.target.matches('input, select, textarea')) {
+                // In real implementation, calculate completion percentage
+                // Update progress bar accordingly
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+PS C:\Users\shany\Documents\MyCursorAI\Cascade_sucscription\boiler-inspection-app> npm run build
+
+> boiler-inspection-app@2.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.19 building for production...
+✓ 1687 modules transformed.
+../dist/public/index.html                   0.43 kB │ gzip:   0.33 kB
+../dist/public/assets/index-BRLorvK6.css   22.55 kB │ gzip:   5.04 kB
+../dist/public/assets/index-C0WL7g8O.js   379.70 kB │ gzip: 117.15 kB
+✓ built in 7.37s
+X [ERROR] Could not resolve "./routes"
+
+    server/index.ts:2:31:
+      2 │ import { registerRoutes } from "./routes";
+        ╵                                ~~~~~~~~~~
+
+X [ERROR] Could not resolve "./vite"
+
+    server/index.ts:3:44:
+      3 │ import { setupVite, serveStatic, log } from "./vite";
+        ╵                                             ~~~~~~~~
+
+2 errors
+node:child_process:921
+    throw err;
+    ^
+
+Error: Command failed: C:\Users\shany\Documents\MyCursorAI\Cascade_sucscription\boiler-inspection-app\node_modules\@esbuild\win32-x64\esbuild.exe server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:882:11)
+    at Object.execFileSync (node:child_process:918:15)
+    at Object.<anonymous> (C:\Users\shany\Documents\MyCursorAI\Cascade_sucscription\boiler-inspection-app\node_modules\esbuild\bin\esbuild:221:28)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 19448,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v22.16.0
